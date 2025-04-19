@@ -1,0 +1,11 @@
+{
+  "domain": "frank_energie",
+  "name": "Frank Energie Slim Handelen",
+  "documentation": "https://github.com/yholkamp/frank-energie-slim",
+  "requirements": ["requests"],
+  "dependencies": [],
+  "codeowners": ["@yholkamp"],
+  "version": "1.0.0",
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}

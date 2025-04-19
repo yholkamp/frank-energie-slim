@@ -1,0 +1,23 @@
+{
+    "data": {
+        "smartBatterySessions": {
+            "deviceId": "id123",
+            "periodStartDate": "2025-04-18",
+            "periodEndDate": "2025-04-18",
+            "periodEpexResult": -0.10908,
+            "periodFrankSlim": 0.05807999999999999,
+            "periodImbalanceResult": 0.24638372,
+            "periodTotalResult": 0.19538371999999998,
+            "periodTradeIndex": null,
+            "periodTradingResult": 0.30446372,
+            "sessions": [
+                {
+                    "cumulativeTradingResult": 0.30446372,
+                    "date": "2025-04-18",
+                    "tradingResult": 0.30446372
+                }
+            ],
+            "totalTradingResult": 22.31815910677404
+        }
+    }
+}

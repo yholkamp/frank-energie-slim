@@ -1,0 +1,17 @@
+{
+    "data": {
+        "smartBatteries": [
+            {
+                "brand": "SolarEdge",
+                "capacity": 16,
+                "createdAt": "2025-04-07T15:08:26.972Z",
+                "externalReference": "external123",
+                "id": "id123",
+                "maxChargePower": 4,
+                "maxDischargePower": 4,
+                "provider": "SOLAREDGE",
+                "updatedAt": "2025-04-07T15:08:26.972Z"
+            }
+        ]
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "username": "Username",
+        "password": "Password"
+      }
+    }
+  }
+}
