@@ -1,5 +1,5 @@
 {
-  "domain": "frank_energie_slim",
+  "domain": "frank_energie",
   "name": "Frank Energie Slim Handelen",
   "documentation": "https://github.com/yholkamp/frank-energie-slim",
   "requirements": ["requests"],
