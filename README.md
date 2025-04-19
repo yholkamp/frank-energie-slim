@@ -18,12 +18,24 @@ This is a Home Assistant integration for Frank Energie.
 
 After setup, the following Home Assistant entities will be created (per battery):
 
-- `frank_energie.battery_<id>_capacity` (Battery capacity)
-- `frank_energie.battery_<id>_trading_result` (Total trading result)
-- `frank_energie.battery_<id>_epex` (EPEX-correctie)
-- `frank_energie.battery_<id>_frankslim` (Frank Slim)
-- `frank_energie.battery_<id>_handelsresultaat` (Handelsresultaat)
-- `frank_energie.battery_<id>_totaalresultaat` (Totaal Resultaat)
+- `frank_energie.battery_<id>_trading_result` (Handelsresultaat totaal)
+- `frank_energie.battery_<id>_mode` (Thuisbatterij modus)
+- `frank_energie.battery_<id>_soc` (Thuisbatterij SoC)
+- `frank_energie.battery_<id>_epex` (EPEX-correctie vandaag)
+- `frank_energie.battery_<id>_frankslim` (Frank Slim vandaag)
+- `frank_energie.battery_<id>_handelsresultaat` (Handelsresultaat vandaag)
+- `frank_energie.battery_<id>_brutoresultaat` (Brutoresultaat vandaag)
+- `frank_energie.battery_<id>_nettoresultaat` (Totaalresultaat vandaag)
+
+And the following totals entities:
+
+- `frank_energie.periodEpexResult_total` (EPEX-correctie vandaag Totaal)
+- `frank_energie.periodFrankSlim_total` (Frank Slim vandaag Totaal)
+- `frank_energie.periodImbalanceResult_total` (Handelsresultaat vandaag Totaal)
+- `frank_energie.periodTradingResult_total` (Brutoresultaat vandaag Totaal)
+- `frank_energie.periodTotalResult_total` (Totaalresultaat vandaag Totaal)
+- `frank_energie_total_avg_soc` (Gemiddelde SoC batterijen)
+- `frank_energie_total_last_mode` (Laatste batterijmodus)
 
 ## Setup
 

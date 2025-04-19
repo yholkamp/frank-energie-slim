@@ -1,0 +1,9 @@
+{
+  "name": "Frank Energie Slim",
+  "content_in_root": false,
+  "country": "NL",
+  "zip_release": true,
+  "filename": "custom_components/frank_energie_slim/manifest.json",
+  "category": "integration",
+  "hacs": true
+}
