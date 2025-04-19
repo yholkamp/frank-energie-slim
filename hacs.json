@@ -3,5 +3,9 @@
   "content_in_root": false,
   "country": "NL",
   "zip_release": true,
-  "filename": "custom_components/frank_energie_slim/manifest.json"
+  "filename": "release.zip",
+  "domains": [
+    "frank_energie"
+  ],
+  "homeassistant": "2024.12.1"
 }
