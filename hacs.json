@@ -3,6 +3,5 @@
   "content_in_root": false,
   "country": "NL",
   "zip_release": true,
-  "filename": "custom_components/frank_energie_slim/manifest.json",
-  "issue_tracker": "https://github.com/yholkamp/frank-energie-slim/issues"
+  "filename": "custom_components/frank_energie_slim/manifest.json"
 }

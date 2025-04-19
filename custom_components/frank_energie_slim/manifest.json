@@ -7,5 +7,7 @@
   "codeowners": ["@yholkamp"],
   "version": "1.0.0",
   "iot_class": "cloud_polling",
-  "config_flow": true
+  "config_flow": true,
+  "loggers": ["aiohue"],
+  "issue_tracker": "https://github.com/yholkamp/frank-energie-slim/issues"
 }
