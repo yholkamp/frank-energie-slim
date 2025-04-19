@@ -4,8 +4,5 @@
   "country": "NL",
   "zip_release": true,
   "filename": "release.zip",
-  "domains": [
-    "frank_energie"
-  ],
   "homeassistant": "2024.12.1"
 }
