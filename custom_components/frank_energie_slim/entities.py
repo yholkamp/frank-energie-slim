@@ -11,43 +11,6 @@ ENTITY_NAMES = {
     'totalTradingResult': 'Handelsresultaat totaal'
 }
 
-class FrankEnergieBatterySessionSensor(Entity):
-    def __init__(self, hass, session, details=None):
-        self.hass = hass
-        self._session = session
-        self._details = details or {}
-        self._attr_name = "Handelsresultaat totaal"
-        self._attr_unique_id = f"battery_{session.get('deviceId')}_trading_result"
-        self._attr_has_entity_name = True
-        self._state = session.get('totalTradingResult')
-        self._attr_device_class = "monetary"
-        self._attr_unit_of_measurement = "EUR"
-        if hass is not None:
-            self.entity_id = generate_entity_id(
-                'sensor.frank_slim_{}', f"{session.get('deviceId')}_trading_result", hass=hass
-            )
-        else:
-            self.entity_id = f"sensor.frank_slim_{session.get('deviceId')}_trading_result"
-
-    @property
-    def state(self):
-        return self._state
-
-    @property
-    def device_info(self):
-        # Add friendly name and manufacturer/model if available
-        brand = self._details.get('smartBattery', {}).get('brand', 'Battery')
-        device_id = str(self._session['deviceId'])
-        return {
-            "identifiers": {("frank_energie_slim", device_id)},
-            "name": f"{brand} ({device_id})",
-            "manufacturer": self._details.get('smartBattery', {}).get('provider', 'Frank Energie'),
-            "model": brand,
-        }
-
-    async def async_update(self):
-        pass
-
 class FrankEnergieBatterySessionResultSensor(Entity):
     def __init__(self, hass, session, result_key, unique_id_suffix, details=None):
         self.hass = hass

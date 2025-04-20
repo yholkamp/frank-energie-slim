@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import patch
 from custom_components.frank_energie_slim.sensor import FrankEnergieBatterySessionResultSensor, get_battery_mode_from_settings
 from custom_components.frank_energie_slim.entities import (
-    FrankEnergieBatterySessionSensor,
     FrankEnergieBatterySessionResultSensor,
     FrankEnergieBatteryModeSensor,
     FrankEnergieBatteryStateOfChargeSensor,
@@ -52,12 +51,6 @@ class TestFrankEnergieEntities(unittest.TestCase):
             "smartBattery": {"brand": "SolarEdge", "provider": "SOLAREDGE", "settings": {"batteryMode": "auto"}},
             "smartBatterySummary": {"lastKnownStateOfCharge": 77}
         }
-
-    def test_battery_session_sensor(self):
-        sensor = FrankEnergieBatterySessionSensor(None, self.session, self.details)
-        self.assertEqual(sensor.state, 22.31)
-        self.assertIn("SolarEdge", sensor.device_info["name"])
-        self.assertEqual(sensor._attr_name, "Handelsresultaat totaal")
 
     def test_battery_mode_sensor(self):
         sensor = FrankEnergieBatteryModeSensor(None, "id123", "auto", self.details)

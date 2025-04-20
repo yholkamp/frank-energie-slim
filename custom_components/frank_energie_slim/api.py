@@ -41,7 +41,6 @@ class FrankEnergie:
         }
 
         response = self.query(query)
-        logging.getLogger(__name__).info(f"Frank Energie login response: {response}")
         self.auth = response['data']['login']
         return self.auth
 

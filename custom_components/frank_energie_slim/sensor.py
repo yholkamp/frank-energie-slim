@@ -4,7 +4,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.event import async_track_time_interval
 from .api import FrankEnergie
 from .entities import (
-    FrankEnergieBatterySessionSensor,
     FrankEnergieBatterySessionResultSensor,
     FrankEnergieTotalResultSensor,
     FrankEnergieBatteryModeSensor,
@@ -34,7 +33,6 @@ SESSION_RESULT_KEYS = list(RESULT_SENSOR_MAP.keys())
 class BatteryEntityGroup:
     mode_sensor: object
     soc_sensor: object
-    session_sensor: object
     result_sensors: list
 
 def get_battery_mode_from_settings(settings):
@@ -64,6 +62,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     battery_ids = []
     battery_details = []
     battery_entity_groups = []
+
+    # Create total result sensors only once (not per battery)
+    total_entities = [
+        FrankEnergieTotalResultSensor(hass, result_key, suffix)
+        for result_key, suffix in RESULT_SENSOR_MAP.items()
+    ]
+
     for battery in batteries:
         battery_ids.append(battery['id'])
         # Fetch battery details
@@ -85,27 +90,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         # Create sensors
         mode_sensor = FrankEnergieBatteryModeSensor(hass, battery['id'], mode, details)
         soc_sensor = FrankEnergieBatteryStateOfChargeSensor(hass, battery['id'], state_of_charge, details)
-        session_sensor = FrankEnergieBatterySessionSensor(hass, session, details)
         result_sensors = [
             FrankEnergieBatterySessionResultSensor(hass, session, result_key, suffix, details)
             for result_key, suffix in RESULT_SENSOR_MAP.items()
         ]
-        group = BatteryEntityGroup(mode_sensor, soc_sensor, session_sensor, result_sensors)
+        group = BatteryEntityGroup(mode_sensor, soc_sensor, result_sensors)
         battery_entity_groups.append(group)
-        entities.extend([mode_sensor, soc_sensor, session_sensor] + result_sensors)
+        entities.extend([mode_sensor, soc_sensor] + result_sensors)
 
-        # Add total result sensors using the map
-        total_entities = [
-            FrankEnergieTotalResultSensor(hass, result_key, suffix)
-            for result_key, suffix in RESULT_SENSOR_MAP.items()
-        ]
-        entities.extend(total_entities)
+    # Add total result sensors only once
+    entities.extend(total_entities)
 
     # Add total avg soc, last mode, and last update sensors
     total_avg_soc_entity = FrankEnergieTotalAvgSocSensor(hass)
     total_last_mode_entity = FrankEnergieTotalLastModeSensor(hass)
     total_last_update_entity = FrankEnergieTotalLastUpdateSensor(hass)
     entities.extend([total_avg_soc_entity, total_last_mode_entity, total_last_update_entity])
+
+    for entity in entities:
+        unique_id = getattr(entity, '_attr_unique_id', None)
+        _LOGGER.info(f"Registered entity with unique_id: {unique_id} and entity_id: {getattr(entity, 'entity_id', None)}")
 
     async_add_entities(entities, update_before_add=True)
 
@@ -157,14 +161,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             state_of_charge = socs[i]
             group.mode_sensor._state = mode
             group.soc_sensor._state = state_of_charge
-            group.session_sensor._session = session
-            group.session_sensor._state = session['totalTradingResult']
             for idx, key in enumerate(SESSION_RESULT_KEYS):
                 group.result_sensors[idx]._session = session
                 group.result_sensors[idx]._state = session[key]
                 group.result_sensors[idx]._attr_extra_state_attributes = {}
-            for entity in [group.mode_sensor, group.soc_sensor, group.session_sensor] + group.result_sensors:
-                entity.async_write_ha_state()
+            for entity in [group.mode_sensor, group.soc_sensor] + group.result_sensors:
+                if getattr(entity, 'hass', None) is not None:
+                    entity.async_write_ha_state()
 
     def update_total_entities(total_entities, sessions, modes, socs):
         """Update all total result sensor entities with aggregated data, and update avg soc/mode sensors."""
@@ -172,11 +175,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         for idx, key in enumerate(SESSION_RESULT_KEYS):
             total = sum(float(session.get(key, 0) or 0) for session in sessions)
             total_entities[idx]._state = total
-            total_entities[idx].async_write_ha_state()
+            if getattr(total_entities[idx], 'hass', None) is not None:
+                total_entities[idx].async_write_ha_state()
         total_avg_soc_entity._state = avg_soc
-        total_avg_soc_entity.async_write_ha_state()
+        if getattr(total_avg_soc_entity, 'hass', None) is not None:
+            total_avg_soc_entity.async_write_ha_state()
         total_last_mode_entity._state = last_mode
-        total_last_mode_entity.async_write_ha_state()
+        if getattr(total_last_mode_entity, 'hass', None) is not None:
+            total_last_mode_entity.async_write_ha_state()
         # Set the most recent lastUpdate from all battery_details
         last_updates = [
             details.get('smartBatterySummary', {}).get('lastUpdate')
@@ -188,7 +194,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             total_last_update_entity._state = max(last_updates)
         else:
             total_last_update_entity._state = None
-        total_last_update_entity.async_write_ha_state()
+        if getattr(total_last_update_entity, 'hass', None) is not None:
+            total_last_update_entity.async_write_ha_state()
 
     async def update_totals():
         """Update total sensors immediately after setup using cached battery details."""
