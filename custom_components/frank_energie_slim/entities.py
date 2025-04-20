@@ -98,7 +98,7 @@ class FrankEnergieTotalLastModeSensor(Entity):
     """Sensor for last battery mode across all batteries (totals device)."""
     def __init__(self, hass):
         self.hass = hass
-        self._attr_name = "Modus"
+        self._attr_name = "Batterijmodus"
         self._attr_unique_id = "frank_energie_total_last_mode"
         self._attr_has_entity_name = True
         self._state = None
@@ -147,8 +147,8 @@ class FrankEnergieBatteryModeSensor(Entity):
         self._device_id = device_id
         self._details = details or {}
         self._state = mode
-        self._attr_name = f"Thuisbatterij modus"
-        self._attr_unique_id = f"battery_{device_id}_mode"
+        self._attr_name = f"Batterijmodus"
+        self._attr_unique_id = f"frank_energie_battery_{device_id}_mode"
         self._attr_has_entity_name = True
 
     @property
@@ -175,7 +175,7 @@ class FrankEnergieBatteryStateOfChargeSensor(Entity):
         self._details = details or {}
         self._state = state_of_charge
         self._attr_name = f"State of Charge"
-        self._attr_unique_id = f"battery_{device_id}_soc"
+        self._attr_unique_id = f"frank_energie_battery_{device_id}_soc"
         self._attr_has_entity_name = True
         self._attr_unit_of_measurement = "%"
 

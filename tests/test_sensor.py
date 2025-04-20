@@ -63,13 +63,13 @@ class TestFrankEnergieEntities(unittest.TestCase):
         sensor = FrankEnergieBatteryModeSensor(None, "id123", "auto", self.details)
         self.assertEqual(sensor.state, "auto")
         self.assertIn("SolarEdge", sensor.device_info["name"])
-        self.assertEqual(sensor._attr_name, "Thuisbatterij modus")
+        self.assertEqual(sensor._attr_name, "Batterijmodus")
 
     def test_battery_soc_sensor(self):
         sensor = FrankEnergieBatteryStateOfChargeSensor(None, "id123", 77, self.details)
         self.assertEqual(sensor.state, 77)
         self.assertIn("SolarEdge", sensor.device_info["name"])
-        self.assertEqual(sensor._attr_name, "Thuisbatterij SoC")
+        self.assertEqual(sensor._attr_name, "State of Charge")
         self.assertEqual(sensor._attr_unit_of_measurement, "%")
 
     def test_battery_session_result_sensor(self):
@@ -90,7 +90,7 @@ class TestFrankEnergieEntities(unittest.TestCase):
         sensor = FrankEnergieTotalAvgSocSensor(None)
         sensor._state = 55.5
         self.assertEqual(sensor.state, 55.5)
-        self.assertEqual(sensor._attr_name, "Gemiddelde SoC batterijen")
+        self.assertEqual(sensor._attr_name, "Gemiddelde SoC")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
         self.assertEqual(sensor._attr_unit_of_measurement, "%")
 
@@ -98,7 +98,7 @@ class TestFrankEnergieEntities(unittest.TestCase):
         sensor = FrankEnergieTotalLastModeSensor(None)
         sensor._state = "auto"
         self.assertEqual(sensor.state, "auto")
-        self.assertEqual(sensor._attr_name, "Laatste batterijmodus")
+        self.assertEqual(sensor._attr_name, "Batterijmodus")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
 
 if __name__ == "__main__":
