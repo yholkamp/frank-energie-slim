@@ -2,7 +2,7 @@ from homeassistant import config_entries
 import voluptuous as vol
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 
-class FrankEnergieConfigFlow(config_entries.ConfigFlow, domain="frank_energie"):
+class FrankEnergieConfigFlow(config_entries.ConfigFlow, domain="frank_energie_slim"):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
@@ -15,7 +15,7 @@ class FrankEnergieConfigFlow(config_entries.ConfigFlow, domain="frank_energie"):
             except Exception:
                 errors["base"] = "auth"
             if not errors:
-                return self.async_create_entry(title="Frank Energie", data=user_input)
+                return self.async_create_entry(title="Frank Energie Slim Handelen", data=user_input)
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
