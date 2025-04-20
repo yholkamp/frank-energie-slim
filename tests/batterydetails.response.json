@@ -1,0 +1,20 @@
+{
+    "data": {
+        "smartBattery": {
+            "brand": "SolarEdge",
+            "capacity": 16,
+            "id": "123456",
+            "settings": {
+                "batteryMode": "IMBALANCE_TRADING",
+                "imbalanceTradingStrategy": "AGGRESSIVE",
+                "selfConsumptionTradingAllowed": true
+            }
+        },
+        "smartBatterySummary": {
+            "lastKnownStateOfCharge": 72,
+            "lastKnownStatus": "CHARGE_IMBALANCE",
+            "lastUpdate": "2025-04-20T11:30:00.000Z",
+            "totalResult": 225.01642490011401
+        }
+    }
+}

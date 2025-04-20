@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from custom_components.frank_energie_slim.sensor import FrankEnergieBatterySessionResultSensor
+from custom_components.frank_energie_slim.sensor import FrankEnergieBatterySessionResultSensor, get_battery_mode_from_settings
 from custom_components.frank_energie_slim.entities import (
     FrankEnergieBatterySessionSensor,
     FrankEnergieBatterySessionResultSensor,
@@ -100,6 +100,39 @@ class TestFrankEnergieEntities(unittest.TestCase):
         self.assertEqual(sensor.state, "auto")
         self.assertEqual(sensor._attr_name, "Batterijmodus")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
+
+class TestBatteryModeHelper(unittest.TestCase):
+    def test_imbalance_aggressive(self):
+        settings = {
+            'batteryMode': 'IMBALANCE_TRADING',
+            'imbalanceTradingStrategy': 'AGGRESSIVE',
+            'selfConsumptionTradingAllowed': False
+        }
+        self.assertEqual(get_battery_mode_from_settings(settings), 'imbalance_aggressive')
+
+    def test_imbalance_non_aggressive(self):
+        settings = {
+            'batteryMode': 'IMBALANCE_TRADING',
+            'imbalanceTradingStrategy': 'CONSERVATIVE',
+            'selfConsumptionTradingAllowed': False
+        }
+        self.assertEqual(get_battery_mode_from_settings(settings), 'imbalance')
+
+    def test_self_consumption_plus(self):
+        settings = {
+            'batteryMode': 'SOMETHING_ELSE',
+            'imbalanceTradingStrategy': 'AGGRESSIVE',
+            'selfConsumptionTradingAllowed': True
+        }
+        self.assertEqual(get_battery_mode_from_settings(settings), 'self_consumption_plus')
+
+    def test_fallback(self):
+        settings = {
+            'batteryMode': 'SOMETHING_ELSE',
+            'imbalanceTradingStrategy': 'AGGRESSIVE',
+            'selfConsumptionTradingAllowed': False
+        }
+        self.assertEqual(get_battery_mode_from_settings(settings), 'something_else')
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,6 +36,20 @@ class BatteryEntityGroup:
     session_sensor: object
     result_sensors: list
 
+def get_battery_mode_from_settings(settings):
+    """Return a normalized mode string based on battery settings."""
+    battery_mode = (settings.get('batteryMode') or '').upper()
+    strategy = (settings.get('imbalanceTradingStrategy') or '').upper()
+    self_consumption = settings.get('selfConsumptionTradingAllowed')
+    if battery_mode == 'IMBALANCE_TRADING':
+        if strategy == 'AGGRESSIVE':
+            return 'imbalance_aggressive'
+        else:
+            return 'imbalance'
+    elif self_consumption:
+        return 'self_consumption_plus'
+    return battery_mode.lower() if battery_mode else None
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the Frank Energie integration and sensors."""
     _LOGGER.info("Setting up Frank Energie entry")
@@ -63,7 +77,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         # Extract mode and stateOfCharge
         smart_battery = details.get('smartBattery', {})
         summary = details.get('smartBatterySummary', {})
-        mode = smart_battery.get('settings', {}).get('batteryMode')
+        settings = smart_battery.get('settings', {})
+        # Determine mode using helper function
+        mode = get_battery_mode_from_settings(settings)
         state_of_charge = summary.get('lastKnownStateOfCharge')
         # Create sensors
         mode_sensor = FrankEnergieBatteryModeSensor(hass, battery['id'], mode, details)
@@ -122,7 +138,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 details = battery_details[i]
             smart_battery = details.get('smartBattery', {})
             summary = details.get('smartBatterySummary', {})
-            mode = smart_battery.get('settings', {}).get('batteryMode')
+            settings = smart_battery.get('settings', {})
+            # Determine mode using helper function
+            mode = get_battery_mode_from_settings(settings)
             state_of_charge = summary.get('lastKnownStateOfCharge')
             modes.append(mode)
             socs.append(state_of_charge)
