@@ -11,11 +11,20 @@ from .entities import (
     FrankEnergieBatteryStateOfChargeSensor,
     FrankEnergieTotalAvgSocSensor,
     FrankEnergieTotalLastModeSensor,
+    FrankEnergieTotalLastUpdateSensor,  # <-- import the new sensor
 )
 from datetime import datetime, timedelta
 import logging
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
+
+SESSION_RESULT_KEYS = [
+    'periodEpexResult',
+    'periodFrankSlim',
+    'periodImbalanceResult',
+    'periodTradingResult',
+    'periodTotalResult',
+]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the Frank Energie integration and sensors."""
@@ -71,10 +80,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         ]
         entities.extend(total_entities)
 
-    # Add total avg soc and last mode sensors
+    # Add total avg soc, last mode, and last update sensors
     total_avg_soc_entity = FrankEnergieTotalAvgSocSensor(hass)
     total_last_mode_entity = FrankEnergieTotalLastModeSensor(hass)
-    entities.extend([total_avg_soc_entity, total_last_mode_entity])
+    total_last_update_entity = FrankEnergieTotalLastUpdateSensor(hass)
+    entities.extend([total_avg_soc_entity, total_last_mode_entity, total_last_update_entity])
 
     async_add_entities(entities, update_before_add=True)
 
@@ -144,6 +154,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         total_avg_soc_entity.async_write_ha_state()
         total_last_mode_entity._state = last_mode
         total_last_mode_entity.async_write_ha_state()
+        # Set the most recent lastUpdate from all battery_details
+        last_updates = [
+            details.get('smartBatterySummary', {}).get('lastUpdate')
+            for details in battery_details
+            if details.get('smartBatterySummary', {}).get('lastUpdate')
+        ]
+        if last_updates:
+            # ISO8601 strings, so max() gives the latest
+            total_last_update_entity._state = max(last_updates)
+        else:
+            total_last_update_entity._state = None
+        total_last_update_entity.async_write_ha_state()
 
     async def update_totals():
         """Update total sensors immediately after setup using cached battery details."""

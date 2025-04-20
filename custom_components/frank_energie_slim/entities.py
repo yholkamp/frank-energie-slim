@@ -138,6 +138,33 @@ class FrankEnergieTotalLastModeSensor(Entity):
     async def async_update(self):
         pass
 
+class FrankEnergieTotalLastUpdateSensor(Entity):
+    """Sensor for the most recent lastUpdate timestamp across all batteries (totals device)."""
+    def __init__(self, hass):
+        self.hass = hass
+        self._attr_name = "Laatste update"
+        self._attr_unique_id = "frank_energie_total_last_update"
+        self._attr_has_entity_name = True
+        self._attr_device_class = "timestamp"
+        self._state = None
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', 'total_last_update', hass=hass
+            )
+        else:
+            self.entity_id = 'sensor.frank_slim_total_last_update'
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def device_info(self):
+        return FrankEnergieTotalResultSensor.TOTALS_DEVICE_INFO
+
+    async def async_update(self):
+        pass
+
 class FrankEnergieTotalResultSensor(Entity):
     TOTALS_DEVICE_INFO = {
         "identifiers": {("frank_energie_slim", "totals")},
