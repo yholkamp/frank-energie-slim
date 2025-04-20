@@ -1,4 +1,4 @@
-from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.entity import Entity, generate_entity_id
 import voluptuous as vol
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 
@@ -21,6 +21,12 @@ class FrankEnergieBatterySessionSensor(Entity):
         self._state = session.get('totalTradingResult')
         self._attr_device_class = "monetary"
         self._attr_unit_of_measurement = "EUR"
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', f"{session.get('deviceId')}_trading_result", hass=hass
+            )
+        else:
+            self.entity_id = f"sensor.frank_slim_{session.get('deviceId')}_trading_result"
 
     @property
     def state(self):
@@ -54,6 +60,12 @@ class FrankEnergieBatterySessionResultSensor(Entity):
         self._state = session.get(result_key)
         self._attr_device_class = "monetary"
         self._attr_unit_of_measurement = "EUR"
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', f"{device_id}_{unique_id_suffix}", hass=hass
+            )
+        else:
+            self.entity_id = f"sensor.frank_slim_{device_id}_{unique_id_suffix}"
 
     @property
     def state(self):
@@ -78,10 +90,16 @@ class FrankEnergieTotalAvgSocSensor(Entity):
     def __init__(self, hass):
         self.hass = hass
         self._attr_name = "Gemiddelde SoC"
-        self._attr_unique_id = "frank_energie_total_avg_soc"
+        self._attr_unique_id = "frank_energie_average_soc"
         self._attr_has_entity_name = True
         self._attr_unit_of_measurement = "%"
         self._state = None
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', 'average_soc', hass=hass
+            )
+        else:
+            self.entity_id = 'sensor.frank_slim_average_soc'
 
     @property
     def state(self):
@@ -102,6 +120,12 @@ class FrankEnergieTotalLastModeSensor(Entity):
         self._attr_unique_id = "frank_energie_total_last_mode"
         self._attr_has_entity_name = True
         self._state = None
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', 'total_last_mode', hass=hass
+            )
+        else:
+            self.entity_id = 'sensor.frank_slim_total_last_mode'
 
     @property
     def state(self):
@@ -129,6 +153,12 @@ class FrankEnergieTotalResultSensor(Entity):
         self._state = None  # Start as None, not 0.0
         self._attr_device_class = "monetary"
         self._attr_unit_of_measurement = "EUR"
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', f"{result_key}_total", hass=hass
+            )
+        else:
+            self.entity_id = f"sensor.frank_slim_{result_key}_total"
 
     @property
     def state(self):
@@ -150,6 +180,12 @@ class FrankEnergieBatteryModeSensor(Entity):
         self._attr_name = f"Batterijmodus"
         self._attr_unique_id = f"frank_energie_battery_{device_id}_mode"
         self._attr_has_entity_name = True
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', f"{device_id}_mode", hass=hass
+            )
+        else:
+            self.entity_id = f"sensor.frank_slim_{device_id}_mode"
 
     @property
     def state(self):
@@ -178,6 +214,12 @@ class FrankEnergieBatteryStateOfChargeSensor(Entity):
         self._attr_unique_id = f"frank_energie_battery_{device_id}_soc"
         self._attr_has_entity_name = True
         self._attr_unit_of_measurement = "%"
+        if hass is not None:
+            self.entity_id = generate_entity_id(
+                'sensor.frank_slim_{}', f"{device_id}_soc", hass=hass
+            )
+        else:
+            self.entity_id = f"sensor.frank_slim_{device_id}_soc"
 
     @property
     def state(self):
