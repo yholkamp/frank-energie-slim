@@ -11,20 +11,30 @@ from .entities import (
     FrankEnergieBatteryStateOfChargeSensor,
     FrankEnergieTotalAvgSocSensor,
     FrankEnergieTotalLastModeSensor,
-    FrankEnergieTotalLastUpdateSensor,  # <-- import the new sensor
+    FrankEnergieTotalLastUpdateSensor,
 )
 from datetime import datetime, timedelta
+from dataclasses import dataclass
 import logging
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
-SESSION_RESULT_KEYS = [
-    'periodEpexResult',
-    'periodFrankSlim',
-    'periodImbalanceResult',
-    'periodTradingResult',
-    'periodTotalResult',
-]
+# Map from API response field to entity name suffix
+RESULT_SENSOR_MAP = {
+    'periodEpexResult': 'epex',
+    'periodFrankSlim': 'frankslim',
+    'periodImbalanceResult': 'handelsresultaat',
+    'periodTradingResult': 'brutoresultaat',
+    'periodTotalResult': 'nettoresultaat',
+}
+SESSION_RESULT_KEYS = list(RESULT_SENSOR_MAP.keys())
+
+@dataclass
+class BatteryEntityGroup:
+    mode_sensor: object
+    soc_sensor: object
+    session_sensor: object
+    result_sensors: list
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the Frank Energie integration and sensors."""
@@ -55,28 +65,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         summary = details.get('smartBatterySummary', {})
         mode = smart_battery.get('settings', {}).get('batteryMode')
         state_of_charge = summary.get('lastKnownStateOfCharge')
-        # Group battery entities by battery (list of lists)
-        group = []
-        group.append(FrankEnergieBatteryModeSensor(hass, battery['id'], mode, details))
-        group.append(FrankEnergieBatteryStateOfChargeSensor(hass, battery['id'], state_of_charge, details))
-        group.append(FrankEnergieBatterySessionSensor(hass, session, details))
-        group.extend([
-            FrankEnergieBatterySessionResultSensor(hass, session, 'periodEpexResult', 'epex', details),
-            FrankEnergieBatterySessionResultSensor(hass, session, 'periodFrankSlim', 'frankslim', details),
-            FrankEnergieBatterySessionResultSensor(hass, session, 'periodImbalanceResult', 'handelsresultaat', details),
-            FrankEnergieBatterySessionResultSensor(hass, session, 'periodTradingResult', 'brutoresultaat', details),
-            FrankEnergieBatterySessionResultSensor(hass, session, 'periodTotalResult', 'nettoresultaat', details),
-        ])
+        # Create sensors
+        mode_sensor = FrankEnergieBatteryModeSensor(hass, battery['id'], mode, details)
+        soc_sensor = FrankEnergieBatteryStateOfChargeSensor(hass, battery['id'], state_of_charge, details)
+        session_sensor = FrankEnergieBatterySessionSensor(hass, session, details)
+        result_sensors = [
+            FrankEnergieBatterySessionResultSensor(hass, session, result_key, suffix, details)
+            for result_key, suffix in RESULT_SENSOR_MAP.items()
+        ]
+        group = BatteryEntityGroup(mode_sensor, soc_sensor, session_sensor, result_sensors)
         battery_entity_groups.append(group)
-        entities.extend(group)
+        entities.extend([mode_sensor, soc_sensor, session_sensor] + result_sensors)
 
-        # Add total result sensors
+        # Add total result sensors using the map
         total_entities = [
-            FrankEnergieTotalResultSensor(hass, 'periodEpexResult', 'epex'),
-            FrankEnergieTotalResultSensor(hass, 'periodFrankSlim', 'frankslim'),
-            FrankEnergieTotalResultSensor(hass, 'periodImbalanceResult', 'handelsresultaat'),
-            FrankEnergieTotalResultSensor(hass, 'periodTradingResult', 'brutoresultaat'),
-            FrankEnergieTotalResultSensor(hass, 'periodTotalResult', 'nettoresultaat'),
+            FrankEnergieTotalResultSensor(hass, result_key, suffix)
+            for result_key, suffix in RESULT_SENSOR_MAP.items()
         ]
         entities.extend(total_entities)
 
@@ -132,15 +136,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             session = sessions[i]
             mode = modes[i]
             state_of_charge = socs[i]
-            group[0]._state = mode
-            group[1]._state = state_of_charge
-            group[2]._session = session
-            group[2]._state = session['totalTradingResult']
-            for idx, key in enumerate(SESSION_RESULT_KEYS, 3):
-                group[idx]._session = session
-                group[idx]._state = session[key]
-                group[idx]._attr_extra_state_attributes = {}
-            for entity in group:
+            group.mode_sensor._state = mode
+            group.soc_sensor._state = state_of_charge
+            group.session_sensor._session = session
+            group.session_sensor._state = session['totalTradingResult']
+            for idx, key in enumerate(SESSION_RESULT_KEYS):
+                group.result_sensors[idx]._session = session
+                group.result_sensors[idx]._state = session[key]
+                group.result_sensors[idx]._attr_extra_state_attributes = {}
+            for entity in [group.mode_sensor, group.soc_sensor, group.session_sensor] + group.result_sensors:
                 entity.async_write_ha_state()
 
     def update_total_entities(total_entities, sessions, modes, socs):
