@@ -26,6 +26,7 @@ RESULT_SENSOR_MAP = {
     'periodImbalanceResult': 'handelsresultaat',
     'periodTradingResult': 'brutoresultaat',
     'periodTotalResult': 'nettoresultaat',
+    'totalTradingResult': 'trading_result',
 }
 SESSION_RESULT_KEYS = list(RESULT_SENSOR_MAP.keys())
 

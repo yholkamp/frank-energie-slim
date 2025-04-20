@@ -8,6 +8,7 @@ ENTITY_NAMES = {
     'periodImbalanceResult': 'Handelsresultaat vandaag',
     'periodTotalResult': 'Totaalresultaat vandaag',
     'periodTradingResult': 'Brutoresultaat vandaag',
+    'totalTradingResult': 'Handelsresultaat totaal'
 }
 
 class FrankEnergieBatterySessionSensor(Entity):

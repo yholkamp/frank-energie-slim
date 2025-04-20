@@ -40,6 +40,7 @@ Daarnaast worden deze sensoren toegevoegd voor een gemiddelde (voor state of cha
 * sensor.frank_slim_brutoresultaat_total
 * sensor.frank_slim_nettoresultaat_total
 * sensor.frank_slim_total_last_mode
+* sensor.frank_slim_trading_result_total
 
 ## Testing
 
