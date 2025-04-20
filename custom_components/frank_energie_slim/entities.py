@@ -144,21 +144,23 @@ class FrankEnergieTotalResultSensor(Entity):
         "name": "Totaal batterijen",
         "manufacturer": "Frank Energie"
     }
-    def __init__(self, hass, result_key):
+    def __init__(self, hass, result_key, unique_id_suffix=None):
         self.hass = hass
         self._result_key = result_key
         self._attr_name = f"{ENTITY_NAMES.get(result_key, result_key)}"
-        self._attr_unique_id = f"frank_energie_{result_key}_total"
+        # Use unique_id_suffix for unique_id and entity_id if provided, else fallback to result_key
+        suffix = unique_id_suffix if unique_id_suffix is not None else result_key
+        self._attr_unique_id = f"frank_energie_{suffix}_total"
         self._attr_has_entity_name = True
         self._state = None  # Start as None, not 0.0
         self._attr_device_class = "monetary"
         self._attr_unit_of_measurement = "EUR"
         if hass is not None:
             self.entity_id = generate_entity_id(
-                'sensor.frank_slim_{}', f"{result_key}_total", hass=hass
+                'sensor.frank_slim_{}', f"{suffix}_total", hass=hass
             )
         else:
-            self.entity_id = f"sensor.frank_slim_{result_key}_total"
+            self.entity_id = f"sensor.frank_slim_{suffix}_total"
 
     @property
     def state(self):

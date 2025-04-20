@@ -61,16 +61,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         battery_entity_groups.append(group)
         entities.extend(group)
 
-    # Add total result sensors
-    SESSION_RESULT_KEYS = [
-        'periodEpexResult',
-        'periodFrankSlim',
-        'periodImbalanceResult',
-        'periodTradingResult',
-        'periodTotalResult',
-    ]
-    total_entities = [FrankEnergieTotalResultSensor(hass, key) for key in SESSION_RESULT_KEYS]
-    entities.extend(total_entities)
+        # Add total result sensors
+        total_entities = [
+            FrankEnergieTotalResultSensor(hass, 'periodEpexResult', 'epex'),
+            FrankEnergieTotalResultSensor(hass, 'periodFrankSlim', 'frankslim'),
+            FrankEnergieTotalResultSensor(hass, 'periodImbalanceResult', 'handelsresultaat'),
+            FrankEnergieTotalResultSensor(hass, 'periodTradingResult', 'brutoresultaat'),
+            FrankEnergieTotalResultSensor(hass, 'periodTotalResult', 'nettoresultaat'),
+        ]
+        entities.extend(total_entities)
 
     # Add total avg soc and last mode sensors
     total_avg_soc_entity = FrankEnergieTotalAvgSocSensor(hass)

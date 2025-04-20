@@ -14,10 +14,32 @@ Of download een release en voeg de map uit 'custom_components' toe aan je eigen 
 
 Herstart vervolgens Home Assistant en voeg de integratie toe via Instellingen - Apparaten en Diensten - Toevoegen - Frank Energie Slim Handelen.
 
-
 ## Setup
 
-Configuration is done via the Home Assistant UI (Integrations page). No YAML configuration is required.
+Stel de koppeling in via de Home Assistant UI via Apparaten & Diensten.
+
+## Entities
+
+Dit component voegt meerdere entiteiten toe, als eerst worden de volgende per gekoppelde batterij toegevoegd: 
+
+* sensor.frank_slim_{batteryId}_brutoresultaat
+* sensor.frank_slim_{batteryId}_epex
+* sensor.frank_slim_{batteryId}_frankslim
+* sensor.frank_slim_{batteryId}_handelsresultaat
+* sensor.frank_slim_{batteryId}_nettoresultaat
+* sensor.frank_slim_{batteryId}_soc
+* sensor.frank_slim_{batteryId}_trading_result
+* sensor.frank_slim_{batteryId}_mode
+
+Daarnaast worden deze sensoren toegevoegd voor een gemiddelde (voor state of charge) of de som van de batterijresultaten:
+
+* sensor.frank_slim_average_soc
+* sensor.frank_slim_epex_total
+* sensor.frank_slim_frankslim_total
+* sensor.frank_slim_handelsresultaat_total
+* sensor.frank_slim_brutoresultaat_total
+* sensor.frank_slim_nettoresultaat_total
+* sensor.frank_slim_total_last_mode
 
 ## Testing
 
