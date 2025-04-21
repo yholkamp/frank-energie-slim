@@ -131,6 +131,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async def fetch_battery_data(fetch_details=True):
         """Fetch session, mode, and state of charge for all batteries."""
         sessions, modes, socs = [], [], []
+        new_battery_details = []  # Collect fresh details if fetch_details is True
         for i, battery_id in enumerate(battery_ids):
             today = datetime.now()
             session_data = await hass.async_add_executor_job(
@@ -139,6 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             if fetch_details:
                 details_data = await hass.async_add_executor_job(client.get_smart_battery_details, battery_id)
                 details = details_data['data']
+                new_battery_details.append(details)
             else:
                 details = battery_details[i]
             smart_battery = details.get('smartBattery', {})
@@ -151,6 +153,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             socs.append(state_of_charge)
             session = session_data['data']['smartBatterySessions']
             sessions.append(session)
+        # If we fetched new details, update battery_details in-place
+        if fetch_details and new_battery_details:
+            battery_details.clear()
+            battery_details.extend(new_battery_details)
         return sessions, modes, socs
 
     def update_battery_entities(battery_entity_groups, sessions, modes, socs):
