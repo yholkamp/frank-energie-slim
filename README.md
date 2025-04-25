@@ -18,6 +18,7 @@ Houd er rekening mee dat ook deze integratie werkt op basis van de API zoals die
 * Herstart vervolgens Home Assistant
 * Voeg de integratie toe zoals je gewend bent via Instellingen, Apparaten en Diensten, Toevoegen en zoek op "Frank Energie Slim Handelen".
 * Vul hier je Frank Energie gebruikersnaam en wachtwoord in en sla op.
+  * Krijg je een fout en kloppen je gegevens? Het kan zijn dat je je wachtwoord opnieuw in moet stellen, gebruik bijvoorbeeld een losse telefoon om opnieuw in te loggen in de Frank-app. Hierna is de API mogelijk wel bruikbaar.
 
 ## Apparaten
 
