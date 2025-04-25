@@ -41,6 +41,7 @@ Daarnaast worden deze sensoren toegevoegd voor een gemiddelde (voor state of cha
 * sensor.frank_slim_nettoresultaat_total
 * sensor.frank_slim_total_last_mode
 * sensor.frank_slim_trading_result_total
+* sensor.frank_slim_total_last_update - datum en tijd van de laatste status update zoals getoond in de app.
 
 ## Testing
 
