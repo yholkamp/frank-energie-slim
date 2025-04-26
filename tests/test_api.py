@@ -34,6 +34,23 @@ class TestFrankEnergie(unittest.TestCase):
         self.assertEqual(auth['authToken'], "test_auth_token")
         self.assertEqual(auth['refreshToken'], "test_refresh_token")
 
+    @patch('custom_components.frank_energie_slim.api.requests.post')
+    def test_login_error_message_from_server(self, mock_post):
+        # Simulate server error response
+        mock_post.return_value.json.return_value = {
+            "data": None,
+            "errors": [
+                {
+                    "message": "user-error:user-not-found",
+                    "locations": [{"line": 2, "column": 3}],
+                    "path": ["login"]
+                }
+            ]
+        }
+        client = FrankEnergie()
+        with self.assertRaises(Exception) as context:
+            client.login("wrong_user", "wrong_password")
+        self.assertIn("user-error:user-not-found", str(context.exception))
 
     @patch('custom_components.frank_energie_slim.api.requests.post')
     def test_battery_and_session_lookup(self, mock_post):

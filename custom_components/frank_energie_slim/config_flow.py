@@ -12,7 +12,7 @@ class FrankEnergieConfigFlow(config_entries.ConfigFlow, domain="frank_energie_sl
             from .api import FrankEnergie
             api = FrankEnergie()
             try:
-                await self.hass.async_add_executor_job(
+                auth = await self.hass.async_add_executor_job(
                     api.login, user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
                 )
             except Exception as exc:

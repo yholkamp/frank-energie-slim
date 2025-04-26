@@ -41,6 +41,12 @@ class FrankEnergie:
         }
 
         response = self.query(query)
+        # If errors are present, raise the first error message
+        if response and 'errors' in response and response['errors']:
+            raise Exception(response['errors'][0].get('message', 'Onbekende fout'))
+        # Defensive: check for expected structure
+        if not response or 'data' not in response:
+            raise Exception("Inloggen mislukt: controleer gebruikersnaam en wachtwoord.")
         self.auth = response['data']['login']
         return self.auth
 
