@@ -120,6 +120,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         "entities": entities,
         "total_entities": total_entities,
         "battery_details": battery_details,
+        "username": username,
+        "password": password,
     }
 
     def calc_avg_soc_and_last_mode(socs, modes):
@@ -134,15 +136,45 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         new_battery_details = []  # Collect fresh details if fetch_details is True
         for i, battery_id in enumerate(battery_ids):
             today = datetime.now()
-            session_data = await hass.async_add_executor_job(
-                client.get_smart_battery_sessions, battery_id, today, today
-            )
-            if fetch_details:
-                details_data = await hass.async_add_executor_job(client.get_smart_battery_details, battery_id)
-                details = details_data['data']
-                new_battery_details.append(details)
-            else:
-                details = battery_details[i]
+            try:
+                session_data = await hass.async_add_executor_job(
+                    client.get_smart_battery_sessions, battery_id, today, today
+                )
+                if fetch_details:
+                    details_data = await hass.async_add_executor_job(client.get_smart_battery_details, battery_id)
+                    details = details_data['data']
+                    new_battery_details.append(details)
+                else:
+                    details = battery_details[i]
+            except Exception as e:
+                if str(e) == "Authentication required":
+                    _LOGGER.info("Authentication token expired, attempting to re-authenticate")
+                    # Get credentials from stored data
+                    for entry_id, data in hass.data["frank_energie_slim"].items():
+                        if data.get("client") == client:
+                            username = data.get("username")
+                            password = data.get("password")
+                            break
+                    else:
+                        _LOGGER.error("Could not find credentials for re-authentication")
+                        raise
+
+                    # Re-authenticate
+                    await hass.async_add_executor_job(client.login, username, password)
+
+                    # Retry the operation
+                    session_data = await hass.async_add_executor_job(
+                        client.get_smart_battery_sessions, battery_id, today, today
+                    )
+                    if fetch_details:
+                        details_data = await hass.async_add_executor_job(client.get_smart_battery_details, battery_id)
+                        details = details_data['data']
+                        new_battery_details.append(details)
+                    else:
+                        details = battery_details[i]
+                else:
+                    # Re-raise if it's not an authentication error
+                    raise
             smart_battery = details.get('smartBattery', {})
             summary = details.get('smartBatterySummary', {})
             settings = smart_battery.get('settings', {})
