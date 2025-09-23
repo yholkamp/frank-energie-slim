@@ -141,11 +141,10 @@ class FrankEnergie:
                         periodTradeIndex
                         periodTradingResult
                         sessions {
-                            cumulativeTradingResult
+                            cumulativeResult
                             date
                             tradingResult
                         }
-                        totalTradingResult
                     }
                 }
             """,

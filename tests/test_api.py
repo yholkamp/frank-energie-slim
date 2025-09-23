@@ -87,12 +87,11 @@ class TestFrankEnergie(unittest.TestCase):
                         "periodTradingResult": 3.0,
                         "sessions": [
                             {
-                                "cumulativeTradingResult": 3.0,
+                                "cumulativeResult": 3.0,
                                 "date": "2025-04-01",
-                                "tradingResult": 3.0
+                                "result": 3.0
                             }
-                        ],
-                        "totalTradingResult": 17.0
+                        ]
                     }
                 }
             }
@@ -112,7 +111,6 @@ class TestFrankEnergie(unittest.TestCase):
         end_date = datetime(2025, 4, 10)
         sessions = client.get_smart_battery_sessions("Battery1", start_date, end_date)
         self.assertEqual(sessions['data']['smartBatterySessions']['deviceId'], "Battery1")
-        self.assertEqual(sessions['data']['smartBatterySessions']['totalTradingResult'], 17.0)
 
 if __name__ == "__main__":
     unittest.main()

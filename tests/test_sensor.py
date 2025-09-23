@@ -47,7 +47,6 @@ class TestFrankEnergieEntities(unittest.TestCase):
             "periodImbalanceResult": 0.24638,
             "periodTotalResult": 0.19538,
             "periodTradingResult": 0.30446,
-            "totalTradingResult": 22.31,
         }
         self.details = {
             "smartBattery": {"brand": "SolarEdge", "provider": "SOLAREDGE", "settings": {"batteryMode": "auto"}},
@@ -194,8 +193,7 @@ class TestReAuthentication(unittest.TestCase):
                                 "periodTotalResult": 17.0,
                                 "periodTradeIndex": 1.0,
                                 "periodTradingResult": 3.0,
-                                "sessions": [],
-                                "totalTradingResult": 17.0
+                                "sessions": []
                             }
                         }
                     }

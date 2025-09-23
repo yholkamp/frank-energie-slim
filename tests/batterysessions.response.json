@@ -12,12 +12,11 @@
             "periodTradingResult": 0.30446372,
             "sessions": [
                 {
-                    "cumulativeTradingResult": 0.30446372,
+                    "cumulativeResult": 0.30446372,
                     "date": "2025-04-18",
                     "tradingResult": 0.30446372
                 }
-            ],
-            "totalTradingResult": 22.31815910677404
+            ]
         }
     }
 }
