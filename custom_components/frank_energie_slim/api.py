@@ -143,7 +143,7 @@ class FrankEnergie:
                         sessions {
                             cumulativeResult
                             date
-                            tradingResult
+                            result
                         }
                     }
                 }
