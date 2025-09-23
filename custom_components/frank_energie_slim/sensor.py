@@ -75,13 +75,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     ]
 
     for battery in batteries:
-        _LOGGER.info("Discovered battery with id: %s", battery.get('id'))
         battery_ids.append(battery['id'])
         # Fetch battery details
         details_data = await hass.async_add_executor_job(client.get_smart_battery_details, battery['id'])
         details = details_data['data']
         battery_details.append(details)
         today = datetime.now()
+        _LOGGER.info("Discovered battery with id: %s, queuing data retrieval for %s", battery.get('id'), today.strftime('%Y-%m-%d'))
         session_data = await hass.async_add_executor_job(
             client.get_smart_battery_sessions, battery['id'], today, today
         )

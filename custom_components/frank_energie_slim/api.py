@@ -2,6 +2,8 @@ import requests
 from datetime import datetime
 import logging
 
+_LOGGER: logging.Logger = logging.getLogger(__package__)
+
 class FrankEnergie:
     def __init__(self, auth_token=None, refresh_token=None):
         self.DATA_URL = "https://frank-graphql-prod.graphcdn.app/"
@@ -19,9 +21,29 @@ class FrankEnergie:
         response.raise_for_status()
         data = response.json()
 
-        if 'errors' in data:
-            for error in data['errors']:
-                if error['message'] == "user-error:auth-not-authorised":
+        # Log GraphQL request when API responds with errors to aid debugging
+        errors = data.get('errors') if isinstance(data, dict) else None
+        if isinstance(errors, list) and errors:
+            # Build a redacted copy of the request to avoid leaking secrets
+            safe_query = query_data
+            try:
+                if isinstance(query_data, dict):
+                    safe_query = dict(query_data)
+                    vars_in = safe_query.get('variables') if isinstance(safe_query.get('variables'), dict) else None
+                    if isinstance(vars_in, dict):
+                        vars_copy = dict(vars_in)
+                        for k in ['password', 'email', 'authToken', 'refreshToken', 'token', 'authorization', 'Authorization']:
+                            if k in vars_copy and vars_copy[k] is not None:
+                                vars_copy[k] = '***REDACTED***'
+                        safe_query['variables'] = vars_copy
+            except Exception:
+                # Best-effort redaction; ignore redaction failures
+                pass
+            _LOGGER.error("GraphQL returned errors: %s; Request payload: %s", errors, safe_query)
+
+            # Preserve explicit handling of authentication errors
+            for error in errors:
+                if isinstance(error, dict) and error.get('message') == "user-error:auth-not-authorised":
                     raise Exception("Authentication required")
 
         return data
