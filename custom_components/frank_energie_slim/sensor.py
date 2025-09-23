@@ -58,6 +58,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     await hass.async_add_executor_job(client.login, username, password)
     data = await hass.async_add_executor_job(client.get_smart_batteries)
     batteries = data['data']['smartBatteries']
+    # Log battery discovery summary and handle no-battery case
+    if not batteries:
+        _LOGGER.error("No smart batteries were found. No battery sensors will be created. Please verify your Frank Energie account and configuration.")
+    else:
+        _LOGGER.info("Discovered %d smart battery(ies)", len(batteries))
     entities = []
     battery_ids = []
     battery_details = []
@@ -70,6 +75,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     ]
 
     for battery in batteries:
+        _LOGGER.info("Discovered battery with id: %s", battery.get('id'))
         battery_ids.append(battery['id'])
         # Fetch battery details
         details_data = await hass.async_add_executor_job(client.get_smart_battery_details, battery['id'])
