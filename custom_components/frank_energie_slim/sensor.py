@@ -85,7 +85,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         session_data = await hass.async_add_executor_job(
             client.get_smart_battery_sessions, battery['id'], today, today
         )
-        session = session_data['data']['smartBatterySessions']
+        if 'smartBatterySessions' not in session_data['data']:
+            _LOGGER.error(f"Missing 'smartBatterySessions' in response: {session_data}")
+            session = None
+        else:
+            session = session_data['data']['smartBatterySessions']
         # Extract mode and stateOfCharge
         smart_battery = details.get('smartBattery', {})
         summary = details.get('smartBatterySummary', {})
