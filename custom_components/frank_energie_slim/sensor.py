@@ -85,7 +85,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         session_data = await hass.async_add_executor_job(
             client.get_smart_battery_sessions, battery['id'], today, today
         )
-        session = session_data['data']['smartBatterySessions']
+        # Safely parse session data; API may return data=None
+        data_field = session_data.get('data') if isinstance(session_data, dict) else None
+        session = (data_field or {}).get('smartBatterySessions') or {}
+        if not session:
+            _LOGGER.warning("Missing 'smartBatterySessions' in response: %s", session_data)
+        # Ensure we always have a deviceId for stable entity IDs
+        if not session.get('deviceId'):
+            _LOGGER.error("Session data missing 'deviceId', skipping this battery")
+            continue
         # Extract mode and stateOfCharge
         smart_battery = details.get('smartBattery', {})
         summary = details.get('smartBatterySummary', {})
@@ -189,7 +197,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             state_of_charge = summary.get('lastKnownStateOfCharge')
             modes.append(mode)
             socs.append(state_of_charge)
-            session = session_data['data']['smartBatterySessions']
+            # Safely parse session data; API may return data=None
+            data_field = session_data.get('data') if isinstance(session_data, dict) else None
+            if not isinstance(data_field, dict) or 'smartBatterySessions' not in data_field or data_field.get('smartBatterySessions') is None:
+                _LOGGER.warning(f"Missing 'smartBatterySessions' in response for battery {battery_id}: {session_data}")
+                session = {}
+            else:
+                session = data_field.get('smartBatterySessions') or {}
+            if 'deviceId' not in session:
+                session['deviceId'] = battery_id
             sessions.append(session)
         # If we fetched new details, update battery_details in-place
         if fetch_details and new_battery_details:
@@ -200,14 +216,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     def update_battery_entities(battery_entity_groups, sessions, modes, socs):
         """Update all battery-related sensor entities with new data."""
         for i, group in enumerate(battery_entity_groups):
-            session = sessions[i]
-            mode = modes[i]
-            state_of_charge = socs[i]
+            session = sessions[i] if i < len(sessions) else {}
+            if session is None or not isinstance(session, dict):
+                session = {}
+            mode = modes[i] if i < len(modes) else None
+            state_of_charge = socs[i] if i < len(socs) else None
             group.mode_sensor._state = mode
             group.soc_sensor._state = state_of_charge
             for idx, key in enumerate(SESSION_RESULT_KEYS):
                 group.result_sensors[idx]._session = session
-                group.result_sensors[idx]._state = session[key]
+                group.result_sensors[idx]._state = (session or {}).get(key)
                 group.result_sensors[idx]._attr_extra_state_attributes = {}
             for entity in [group.mode_sensor, group.soc_sensor] + group.result_sensors:
                 if getattr(entity, 'hass', None) is not None:
@@ -217,7 +235,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         """Update all total result sensor entities with aggregated data, and update avg soc/mode sensors."""
         avg_soc, last_mode = calc_avg_soc_and_last_mode(socs, modes)
         for idx, key in enumerate(SESSION_RESULT_KEYS):
-            total = sum(float(session.get(key, 0) or 0) for session in sessions)
+            total = sum(float((session or {}).get(key, 0) or 0) for session in sessions)
             total_entities[idx]._state = total
             if getattr(total_entities[idx], 'hass', None) is not None:
                 total_entities[idx].async_write_ha_state()
