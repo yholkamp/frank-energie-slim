@@ -238,7 +238,7 @@ class FrankEnergieConfigFlow:
             api = FrankEnergie()
             try:
                 await self.hass.async_add_executor_job(
-                    api.login, user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
+                    api.login, user_input[CONF_USERNAME].strip, user_input[CONF_PASSWORD]
                 )
             except Exception:
                 errors["base"] = "auth"

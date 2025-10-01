@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "username": "Gebruikersnaam",
+        "username": "E-mailadres",
         "password": "Wachtwoord"
       }
     }
