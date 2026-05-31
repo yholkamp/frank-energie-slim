@@ -18,15 +18,39 @@ import logging
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
-# Map from API response field to entity name suffix
+# Map from API response field to entity name suffix.
+# The entity-id suffixes are kept identical to previous versions so existing
+# entities/dashboards keep working, even though the underlying Frank Energie
+# fields were renamed/restructured.
+#   - periodBreakdownEpexCorrection  (was periodEpexResult)
+#   - periodBreakdownFrankSlim       (was periodFrankSlim)
+#   - periodBreakdownTradingResult   (was periodImbalanceResult)
+#   - periodGrossResult              derived = tradingResult + frankSlim
+#                                    (was periodTradingResult)
+#   - periodResult                   net result (was periodTotalResult)
 RESULT_SENSOR_MAP = {
-    'periodEpexResult': 'epex',
-    'periodFrankSlim': 'frankslim',
-    'periodImbalanceResult': 'handelsresultaat',
-    'periodTradingResult': 'brutoresultaat',
-    'periodTotalResult': 'nettoresultaat',
+    'periodBreakdownEpexCorrection': 'epex',
+    'periodBreakdownFrankSlim': 'frankslim',
+    'periodBreakdownTradingResult': 'handelsresultaat',
+    'periodGrossResult': 'brutoresultaat',
+    'periodResult': 'nettoresultaat',
 }
 SESSION_RESULT_KEYS = list(RESULT_SENSOR_MAP.keys())
+
+
+def augment_session(session):
+    """Add derived fields the API no longer returns directly.
+
+    ``periodGrossResult`` (Brutoresultaat) mirrors the value the old schema
+    exposed as ``periodTradingResult``: trading result plus Frank Slim.
+    """
+    if not isinstance(session, dict):
+        return session
+    trading = session.get('periodBreakdownTradingResult')
+    frank_slim = session.get('periodBreakdownFrankSlim')
+    if trading is not None or frank_slim is not None:
+        session['periodGrossResult'] = (trading or 0) + (frank_slim or 0)
+    return session
 
 @dataclass
 class BatteryEntityGroup:
@@ -38,7 +62,9 @@ def get_battery_mode_from_settings(settings):
     """Return a normalized mode string based on battery settings."""
     battery_mode = (settings.get('batteryMode') or '').upper()
     strategy = (settings.get('imbalanceTradingStrategy') or '').upper()
-    self_consumption = settings.get('selfConsumptionTradingAllowed')
+    # Frank replaced the boolean `selfConsumptionTradingAllowed` with a nullable
+    # threshold price; a configured (non-null) threshold means it's enabled.
+    self_consumption = settings.get('selfConsumptionTradingThresholdPrice') is not None
     if battery_mode == 'IMBALANCE_TRADING':
         if strategy == 'AGGRESSIVE':
             return 'imbalance_aggressive'
@@ -48,6 +74,24 @@ def get_battery_mode_from_settings(settings):
         return 'self_consumption_plus'
     return battery_mode.lower() if battery_mode else None
 
+def extract_site_reference(user_sites_data):
+    """Return the first usable site reference from a UserSites response."""
+    data_field = user_sites_data.get('data') if isinstance(user_sites_data, dict) else None
+    sites = (data_field or {}).get('userSites') or []
+    for site in sites:
+        reference = site.get('reference') if isinstance(site, dict) else None
+        if reference:
+            return reference
+    return None
+
+async def resolve_site_reference(hass, client):
+    """Fetch the user's sites and return the first site reference, or None."""
+    user_sites_data = await hass.async_add_executor_job(client.get_user_sites)
+    site_reference = extract_site_reference(user_sites_data)
+    if not site_reference:
+        _LOGGER.error("No Frank Energie site reference found; cannot list smart batteries. Response: %s", user_sites_data)
+    return site_reference
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the Frank Energie integration and sensors."""
     _LOGGER.info("Setting up Frank Energie entry")
@@ -55,8 +99,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     password = entry.data.get("password")
     client = FrankEnergie()
     await hass.async_add_executor_job(client.login, username, password)
-    data = await hass.async_add_executor_job(client.get_smart_batteries)
-    batteries = data['data']['smartBatteries']
+    # The smartBatteries query now requires the user's site reference, which we
+    # resolve via the UserSites query.
+    site_reference = await resolve_site_reference(hass, client)
+    if site_reference:
+        data = await hass.async_add_executor_job(client.get_smart_batteries, site_reference)
+        batteries = (data.get('data') or {}).get('smartBatteries') or []
+    else:
+        batteries = []
     # Log battery discovery summary and handle no-battery case
     if not batteries:
         _LOGGER.error("No smart batteries were found. No battery sensors will be created. Please verify your Frank Energie account and configuration.")
@@ -86,7 +136,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         )
         # Safely parse session data; API may return data=None
         data_field = session_data.get('data') if isinstance(session_data, dict) else None
-        session = (data_field or {}).get('smartBatterySessions') or {}
+        session = augment_session((data_field or {}).get('smartBatterySessions') or {})
         if not session:
             _LOGGER.warning("Missing 'smartBatterySessions' in response: %s", session_data)
         # Ensure we always have a deviceId for stable entity IDs
@@ -135,6 +185,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         "battery_details": battery_details,
         "username": username,
         "password": password,
+        "site_reference": site_reference,
     }
 
     def calc_avg_soc_and_last_mode(socs, modes):
@@ -202,7 +253,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 _LOGGER.warning(f"Missing 'smartBatterySessions' in response for battery {battery_id}: {session_data}")
                 session = {}
             else:
-                session = data_field.get('smartBatterySessions') or {}
+                session = augment_session(data_field.get('smartBatterySessions') or {})
             if 'deviceId' not in session:
                 session['deviceId'] = battery_id
             sessions.append(session)

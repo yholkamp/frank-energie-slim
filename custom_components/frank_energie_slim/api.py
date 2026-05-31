@@ -15,7 +15,11 @@ class FrankEnergie:
             'User-Agent': 'Python/FrankV1',
         }
         if self.auth:
-            headers['Authorization'] = f"Bearer {self.auth['authToken']}"
+            # Tokens may be stored under camelCase (from a login response) or
+            # snake_case (when constructed directly); accept either.
+            token = self.auth.get('authToken') or self.auth.get('auth_token')
+            if token:
+                headers['Authorization'] = f"Bearer {token}"
 
         response = requests.post(self.DATA_URL, json=query_data, headers=headers)
         response.raise_for_status()
@@ -72,19 +76,39 @@ class FrankEnergie:
         self.auth = response['data']['login']
         return self.auth
 
-    def get_smart_batteries(self):
+    def get_user_sites(self):
         if not self.auth:
             raise Exception("Authentication required")
 
         query = {
             "query": """
-                query SmartBatteries {
-                    smartBatteries {
-                        id
-                   }
-              }
+                query UserSites {
+                    userSites {
+                        reference
+                        status
+                        segments
+                    }
+                }
             """,
-            "operationName": "SmartBatteries"
+            "operationName": "UserSites"
+        }
+
+        return self.query(query)
+
+    def get_smart_batteries(self, site_reference):
+        if not self.auth:
+            raise Exception("Authentication required")
+
+        query = {
+            "query": """
+                query SmartBatteries($siteReference: String!) {
+                    smartBatteries(siteReference: $siteReference) {
+                        id
+                    }
+                }
+            """,
+            "operationName": "SmartBatteries",
+            "variables": {"siteReference": site_reference}
         }
 
         return self.query(query)
@@ -103,7 +127,7 @@ class FrankEnergie:
                         settings {
                             batteryMode
                             imbalanceTradingStrategy
-                            selfConsumptionTradingAllowed
+                            selfConsumptionTradingThresholdPrice
                         }
                     }
                     smartBatterySummary(deviceId: $deviceId) {
@@ -132,18 +156,23 @@ class FrankEnergie:
                         deviceId: $deviceId
                     ) {
                         deviceId
+                        fairUsePolicyVerified
                         periodStartDate
                         periodEndDate
-                        periodEpexResult
-                        periodFrankSlim
-                        periodImbalanceResult
-                        periodTotalResult
-                        periodTradeIndex
-                        periodTradingResult
+                        periodResult
+                        periodBreakdownEpexCorrection
+                        periodBreakdownFrankSlim
+                        periodBreakdownTradingResult
+                        periodBreakdownDiscountInvoice
+                        periodBonus
+                        periodChargedVolume
+                        periodDischargedVolume
+                        periodSavings
                         sessions {
                             cumulativeResult
                             date
                             result
+                            status
                         }
                     }
                 }

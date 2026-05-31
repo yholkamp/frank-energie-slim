@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock, call
-from custom_components.frank_energie_slim.sensor import FrankEnergieBatterySessionResultSensor, get_battery_mode_from_settings
+from custom_components.frank_energie_slim.sensor import FrankEnergieBatterySessionResultSensor, get_battery_mode_from_settings, augment_session, extract_site_reference
 from custom_components.frank_energie_slim.api import FrankEnergie
 from custom_components.frank_energie_slim.entities import (
     FrankEnergieBatterySessionResultSensor,
@@ -16,21 +16,24 @@ class TestFrankEnergieBatterySessionResultSensor(unittest.TestCase):
     @patch('custom_components.frank_energie_slim.api.requests.post')
     def test_battery_session_result_sensors(self, mock_post):
         # Load mock session data as would be returned by the API
-        session = {
+        session = augment_session({
             "deviceId": "id123",
             "periodStartDate": "2025-04-18",
             "periodEndDate": "2025-04-18",
-            "periodEpexResult": -0.10908,
-            "periodFrankSlim": 0.05807999999999999,
-            "periodImbalanceResult": 0.24638372,
-            "periodTotalResult": 0.19538371999999998,
-        }
+            "periodBreakdownEpexCorrection": -0.10908,
+            "periodBreakdownFrankSlim": 0.05807999999999999,
+            "periodBreakdownTradingResult": 0.24638372,
+            "periodResult": 0.19538371999999998,
+        })
+        # Brutoresultaat is derived: tradingResult + frankSlim
+        expected_gross = 0.24638372 + 0.05807999999999999
         # Test each result sensor
         sensors = [
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodEpexResult', 'epex'), -0.10908, 'EPEX-correctie vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodFrankSlim', 'frankslim'), 0.05807999999999999, 'Frank Slim vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodImbalanceResult', 'handelsresultaat'), 0.24638372, 'Handelsresultaat vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodTotalResult', 'nettoresultaat'), 0.19538371999999998, 'Totaalresultaat vandaag'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownEpexCorrection', 'epex'), -0.10908, 'EPEX-correctie vandaag'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownFrankSlim', 'frankslim'), 0.05807999999999999, 'Frank Slim vandaag'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownTradingResult', 'handelsresultaat'), 0.24638372, 'Handelsresultaat vandaag'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodGrossResult', 'brutoresultaat'), expected_gross, 'Brutoresultaat vandaag'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodResult', 'nettoresultaat'), 0.19538371999999998, 'Totaalresultaat vandaag'),
         ]
         for sensor, expected_state, expected_name in sensors:
             self.assertEqual(sensor.state, expected_state)
@@ -38,16 +41,15 @@ class TestFrankEnergieBatterySessionResultSensor(unittest.TestCase):
 
 class TestFrankEnergieEntities(unittest.TestCase):
     def setUp(self):
-        self.session = {
+        self.session = augment_session({
             "deviceId": "id123",
             "periodStartDate": "2025-04-18",
             "periodEndDate": "2025-04-18",
-            "periodEpexResult": -0.10908,
-            "periodFrankSlim": 0.05808,
-            "periodImbalanceResult": 0.24638,
-            "periodTotalResult": 0.19538,
-            "periodTradingResult": 0.30446,
-        }
+            "periodBreakdownEpexCorrection": -0.10908,
+            "periodBreakdownFrankSlim": 0.05808,
+            "periodBreakdownTradingResult": 0.24638,
+            "periodResult": 0.19538,
+        })
         self.details = {
             "smartBattery": {"brand": "SolarEdge", "provider": "SOLAREDGE", "settings": {"batteryMode": "auto"}},
             "smartBatterySummary": {"lastKnownStateOfCharge": 77}
@@ -67,14 +69,14 @@ class TestFrankEnergieEntities(unittest.TestCase):
         self.assertEqual(sensor._attr_unit_of_measurement, "%")
 
     def test_battery_session_result_sensor(self):
-        sensor = FrankEnergieBatterySessionResultSensor(None, self.session, 'periodEpexResult', 'epex', self.details)
+        sensor = FrankEnergieBatterySessionResultSensor(None, self.session, 'periodBreakdownEpexCorrection', 'epex', self.details)
         self.assertEqual(sensor.state, -0.10908)
         self.assertIn("SolarEdge", sensor.device_info["name"])
         self.assertEqual(sensor._attr_name, "EPEX-correctie vandaag")
         self.assertEqual(sensor._attr_unit_of_measurement, "EUR")
 
     def test_total_result_sensor(self):
-        sensor = FrankEnergieTotalResultSensor(None, 'periodEpexResult')
+        sensor = FrankEnergieTotalResultSensor(None, 'periodBreakdownEpexCorrection')
         self.assertEqual(sensor._attr_name, "EPEX-correctie vandaag")
         self.assertEqual(sensor._attr_unit_of_measurement, "EUR")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
@@ -100,7 +102,7 @@ class TestBatteryModeHelper(unittest.TestCase):
         settings = {
             'batteryMode': 'IMBALANCE_TRADING',
             'imbalanceTradingStrategy': 'AGGRESSIVE',
-            'selfConsumptionTradingAllowed': False
+            'selfConsumptionTradingThresholdPrice': None
         }
         self.assertEqual(get_battery_mode_from_settings(settings), 'imbalance_aggressive')
 
@@ -108,7 +110,7 @@ class TestBatteryModeHelper(unittest.TestCase):
         settings = {
             'batteryMode': 'IMBALANCE_TRADING',
             'imbalanceTradingStrategy': 'CONSERVATIVE',
-            'selfConsumptionTradingAllowed': False
+            'selfConsumptionTradingThresholdPrice': None
         }
         self.assertEqual(get_battery_mode_from_settings(settings), 'imbalance')
 
@@ -116,7 +118,16 @@ class TestBatteryModeHelper(unittest.TestCase):
         settings = {
             'batteryMode': 'SOMETHING_ELSE',
             'imbalanceTradingStrategy': 'AGGRESSIVE',
-            'selfConsumptionTradingAllowed': True
+            'selfConsumptionTradingThresholdPrice': 0.05
+        }
+        self.assertEqual(get_battery_mode_from_settings(settings), 'self_consumption_plus')
+
+    def test_self_consumption_zero_threshold(self):
+        # A threshold of 0 is still a configured value (not None) → enabled
+        settings = {
+            'batteryMode': 'SOMETHING_ELSE',
+            'imbalanceTradingStrategy': 'AGGRESSIVE',
+            'selfConsumptionTradingThresholdPrice': 0
         }
         self.assertEqual(get_battery_mode_from_settings(settings), 'self_consumption_plus')
 
@@ -124,9 +135,23 @@ class TestBatteryModeHelper(unittest.TestCase):
         settings = {
             'batteryMode': 'SOMETHING_ELSE',
             'imbalanceTradingStrategy': 'AGGRESSIVE',
-            'selfConsumptionTradingAllowed': False
+            'selfConsumptionTradingThresholdPrice': None
         }
         self.assertEqual(get_battery_mode_from_settings(settings), 'something_else')
+
+class TestExtractSiteReference(unittest.TestCase):
+    def test_returns_first_reference(self):
+        data = {"data": {"userSites": [{"reference": "A"}, {"reference": "B"}]}}
+        self.assertEqual(extract_site_reference(data), "A")
+
+    def test_skips_blank_and_returns_next(self):
+        data = {"data": {"userSites": [{"reference": ""}, {"reference": "B"}]}}
+        self.assertEqual(extract_site_reference(data), "B")
+
+    def test_none_when_no_sites(self):
+        self.assertIsNone(extract_site_reference({"data": {"userSites": []}}))
+        self.assertIsNone(extract_site_reference({"data": None}))
+        self.assertIsNone(extract_site_reference(None))
 
 class TestReAuthentication(unittest.TestCase):
     @patch('custom_components.frank_energie_slim.api.requests.post')
@@ -185,20 +210,34 @@ class TestReAuthentication(unittest.TestCase):
                         "data": {
                             "smartBatterySessions": {
                                 "deviceId": args[0],
+                                "fairUsePolicyVerified": True,
                                 "periodStartDate": "2025-04-01",
                                 "periodEndDate": "2025-04-10",
-                                "periodEpexResult": 10.0,
-                                "periodFrankSlim": 5.0,
-                                "periodImbalanceResult": 2.0,
-                                "periodTotalResult": 17.0,
-                                "periodTradeIndex": 1.0,
-                                "periodTradingResult": 3.0,
+                                "periodResult": 17.0,
+                                "periodBreakdownEpexCorrection": 10.0,
+                                "periodBreakdownFrankSlim": 5.0,
+                                "periodBreakdownTradingResult": 2.0,
+                                "periodBreakdownDiscountInvoice": 0.0,
+                                "periodBonus": 0.0,
+                                "periodChargedVolume": 0.0,
+                                "periodDischargedVolume": 0.0,
+                                "periodSavings": 0.0,
                                 "sessions": []
                             }
                         }
                     }
                 else:
                     raise Exception("Authentication required")
+            elif func == client.get_user_sites:
+                return {
+                    "data": {
+                        "userSites": [
+                            {"reference": "Site1", "status": "IN_DELIVERY", "segments": ["ELECTRICITY"]}
+                        ]
+                    }
+                }
+            elif func == client.get_smart_batteries:
+                return {"data": {"smartBatteries": [{"id": "battery1"}]}}
             elif func == client.login:
                 client.auth = {"authToken": "new_auth_token", "refreshToken": "new_refresh_token"}
                 return client.auth

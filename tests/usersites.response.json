@@ -1,0 +1,11 @@
+{
+    "data": {
+        "userSites": [
+            {
+                "reference": "abc123def456",
+                "status": "IN_DELIVERY",
+                "segments": ["ELECTRICITY", "GAS"]
+            }
+        ]
+    }
+}

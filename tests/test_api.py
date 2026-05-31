@@ -77,19 +77,24 @@ class TestFrankEnergie(unittest.TestCase):
                 "data": {
                     "smartBatterySessions": {
                         "deviceId": "Battery1",
+                        "fairUsePolicyVerified": True,
                         "periodStartDate": "2025-04-01",
                         "periodEndDate": "2025-04-10",
-                        "periodEpexResult": 10.0,
-                        "periodFrankSlim": 5.0,
-                        "periodImbalanceResult": 2.0,
-                        "periodTotalResult": 17.0,
-                        "periodTradeIndex": 1.0,
-                        "periodTradingResult": 3.0,
+                        "periodResult": 17.0,
+                        "periodBreakdownEpexCorrection": 10.0,
+                        "periodBreakdownFrankSlim": 5.0,
+                        "periodBreakdownTradingResult": 2.0,
+                        "periodBreakdownDiscountInvoice": 0.0,
+                        "periodBonus": 0.0,
+                        "periodChargedVolume": 0.0,
+                        "periodDischargedVolume": 0.0,
+                        "periodSavings": 0.0,
                         "sessions": [
                             {
                                 "cumulativeResult": 3.0,
                                 "date": "2025-04-01",
-                                "result": 3.0
+                                "result": 3.0,
+                                "status": "COMPLETE"
                             }
                         ]
                     }
@@ -101,8 +106,8 @@ class TestFrankEnergie(unittest.TestCase):
         client = FrankEnergie(auth_token="test_auth_token")
         client.auth = {'authToken': 'test_auth_token'}  # Ensure authToken is present
 
-        # Test battery lookup
-        batteries = client.get_smart_batteries()
+        # Test battery lookup (now requires a site reference)
+        batteries = client.get_smart_batteries("Site1")
         self.assertEqual(len(batteries['data']['smartBatteries']), 1)
         self.assertEqual(batteries['data']['smartBatteries'][0]['brand'], "TestBrand")
 
@@ -111,6 +116,21 @@ class TestFrankEnergie(unittest.TestCase):
         end_date = datetime(2025, 4, 10)
         sessions = client.get_smart_battery_sessions("Battery1", start_date, end_date)
         self.assertEqual(sessions['data']['smartBatterySessions']['deviceId'], "Battery1")
+
+    @patch('custom_components.frank_energie_slim.api.requests.post')
+    def test_user_sites_lookup(self, mock_post):
+        # smartBatteries now requires a siteReference, resolved via userSites
+        mock_post.return_value.json.return_value = {
+            "data": {
+                "userSites": [
+                    {"reference": "Site1", "status": "IN_DELIVERY", "segments": ["ELECTRICITY"]}
+                ]
+            }
+        }
+        client = FrankEnergie()
+        client.auth = {'authToken': 'test_auth_token'}
+        result = client.get_user_sites()
+        self.assertEqual(result['data']['userSites'][0]['reference'], "Site1")
 
 if __name__ == "__main__":
     unittest.main()
