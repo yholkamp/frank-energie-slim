@@ -103,7 +103,7 @@ class FrankEnergie:
                         settings {
                             batteryMode
                             imbalanceTradingStrategy
-                            selfConsumptionTradingAllowed
+                            selfConsumptionTradingThresholdPrice
                         }
                     }
                     smartBatterySummary(deviceId: $deviceId) {
@@ -134,12 +134,10 @@ class FrankEnergie:
                         deviceId
                         periodStartDate
                         periodEndDate
-                        periodEpexResult
-                        periodFrankSlim
-                        periodImbalanceResult
-                        periodTotalResult
-                        periodTradeIndex
-                        periodTradingResult
+                        periodResult
+                        periodBreakdownEpexCorrection
+                        periodBreakdownFrankSlim
+                        periodBreakdownTradingResult
                         sessions {
                             cumulativeResult
                             date

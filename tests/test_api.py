@@ -79,12 +79,10 @@ class TestFrankEnergie(unittest.TestCase):
                         "deviceId": "Battery1",
                         "periodStartDate": "2025-04-01",
                         "periodEndDate": "2025-04-10",
-                        "periodEpexResult": 10.0,
-                        "periodFrankSlim": 5.0,
-                        "periodImbalanceResult": 2.0,
-                        "periodTotalResult": 17.0,
-                        "periodTradeIndex": 1.0,
-                        "periodTradingResult": 3.0,
+                        "periodResult": 17.0,
+                        "periodBreakdownEpexCorrection": 10.0,
+                        "periodBreakdownFrankSlim": 5.0,
+                        "periodBreakdownTradingResult": 2.0,
                         "sessions": [
                             {
                                 "cumulativeResult": 3.0,

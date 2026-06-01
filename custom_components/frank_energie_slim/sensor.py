@@ -18,15 +18,39 @@ import logging
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
-# Map from API response field to entity name suffix
+# Map from API response field to entity name suffix.
+# Entity-id suffixes are kept identical to previous versions so existing
+# entities/dashboards keep working, even though the Frank Energie fields were
+# renamed/restructured:
+#   - periodBreakdownEpexCorrection  (was periodEpexResult)
+#   - periodBreakdownFrankSlim       (was periodFrankSlim)
+#   - periodBreakdownTradingResult   (was periodImbalanceResult)
+#   - periodGrossResult              derived = tradingResult + frankSlim
+#                                    (was periodTradingResult)
+#   - periodResult                   net result (was periodTotalResult)
 RESULT_SENSOR_MAP = {
-    'periodEpexResult': 'epex',
-    'periodFrankSlim': 'frankslim',
-    'periodImbalanceResult': 'handelsresultaat',
-    'periodTradingResult': 'brutoresultaat',
-    'periodTotalResult': 'nettoresultaat',
+    'periodBreakdownEpexCorrection': 'epex',
+    'periodBreakdownFrankSlim': 'frankslim',
+    'periodBreakdownTradingResult': 'handelsresultaat',
+    'periodGrossResult': 'brutoresultaat',
+    'periodResult': 'nettoresultaat',
 }
 SESSION_RESULT_KEYS = list(RESULT_SENSOR_MAP.keys())
+
+
+def augment_session(session):
+    """Add derived fields the API no longer returns directly.
+
+    ``periodGrossResult`` (Brutoresultaat) mirrors the value the old schema
+    exposed as ``periodTradingResult``: trading result plus Frank Slim.
+    """
+    if not isinstance(session, dict):
+        return session
+    trading = session.get('periodBreakdownTradingResult')
+    frank_slim = session.get('periodBreakdownFrankSlim')
+    if trading is not None or frank_slim is not None:
+        session['periodGrossResult'] = (trading or 0) + (frank_slim or 0)
+    return session
 
 @dataclass
 class BatteryEntityGroup:
@@ -38,7 +62,9 @@ def get_battery_mode_from_settings(settings):
     """Return a normalized mode string based on battery settings."""
     battery_mode = (settings.get('batteryMode') or '').upper()
     strategy = (settings.get('imbalanceTradingStrategy') or '').upper()
-    self_consumption = settings.get('selfConsumptionTradingAllowed')
+    # Frank replaced the boolean `selfConsumptionTradingAllowed` with a nullable
+    # threshold price; a configured (non-null) threshold means it's enabled.
+    self_consumption = settings.get('selfConsumptionTradingThresholdPrice') is not None
     if battery_mode == 'IMBALANCE_TRADING':
         if strategy == 'AGGRESSIVE':
             return 'imbalance_aggressive'
@@ -86,7 +112,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         )
         # Safely parse session data; API may return data=None
         data_field = session_data.get('data') if isinstance(session_data, dict) else None
-        session = (data_field or {}).get('smartBatterySessions') or {}
+        session = augment_session((data_field or {}).get('smartBatterySessions') or {})
         if not session:
             _LOGGER.warning("Missing 'smartBatterySessions' in response: %s", session_data)
         # Ensure we always have a deviceId for stable entity IDs
@@ -202,7 +228,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 _LOGGER.warning(f"Missing 'smartBatterySessions' in response for battery {battery_id}: {session_data}")
                 session = {}
             else:
-                session = data_field.get('smartBatterySessions') or {}
+                session = augment_session(data_field.get('smartBatterySessions') or {})
             if 'deviceId' not in session:
                 session['deviceId'] = battery_id
             sessions.append(session)
