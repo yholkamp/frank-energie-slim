@@ -7,7 +7,7 @@
             "settings": {
                 "batteryMode": "IMBALANCE_TRADING",
                 "imbalanceTradingStrategy": "AGGRESSIVE",
-                "selfConsumptionTradingAllowed": true
+                "selfConsumptionTradingThresholdPrice": 0.05
             }
         },
         "smartBatterySummary": {

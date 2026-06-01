@@ -3,11 +3,11 @@ import voluptuous as vol
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 
 ENTITY_NAMES = {
-    'periodEpexResult': 'EPEX-correctie vandaag',
-    'periodFrankSlim': 'Frank Slim vandaag',
-    'periodImbalanceResult': 'Handelsresultaat vandaag',
-    'periodTotalResult': 'Totaalresultaat vandaag',
-    'periodTradingResult': 'Brutoresultaat vandaag',
+    'periodBreakdownEpexCorrection': 'EPEX-correctie vandaag',
+    'periodBreakdownFrankSlim': 'Frank Slim vandaag',
+    'periodBreakdownTradingResult': 'Handelsresultaat vandaag',
+    'periodResult': 'Totaalresultaat vandaag',
+    'periodGrossResult': 'Brutoresultaat vandaag',
 }
 
 class FrankEnergieBatterySessionResultSensor(Entity):
