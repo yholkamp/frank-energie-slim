@@ -28,12 +28,15 @@ _LOGGER: logging.Logger = logging.getLogger(__package__)
 #   - periodGrossResult              derived = tradingResult + frankSlim
 #                                    (was periodTradingResult)
 #   - periodResult                   net result (was periodTotalResult)
+#   - totalTradingResult             derived from latest session cumulativeResult;
+#                                    keeps the legacy `trading_result` entity ids alive
 RESULT_SENSOR_MAP = {
     'periodBreakdownEpexCorrection': 'epex',
     'periodBreakdownFrankSlim': 'frankslim',
     'periodBreakdownTradingResult': 'handelsresultaat',
     'periodGrossResult': 'brutoresultaat',
     'periodResult': 'nettoresultaat',
+    'totalTradingResult': 'trading_result',
 }
 SESSION_RESULT_KEYS = list(RESULT_SENSOR_MAP.keys())
 
@@ -43,6 +46,11 @@ def augment_session(session):
 
     ``periodGrossResult`` (Brutoresultaat) mirrors the value the old schema
     exposed as ``periodTradingResult``: trading result plus Frank Slim.
+
+    ``totalTradingResult`` (Handelsresultaat totaal) restores the running total
+    the API no longer exposes directly. It is taken from the latest session's
+    ``cumulativeResult`` (the per-session running cumulative), keeping the legacy
+    ``*_trading_result`` entities alive with a meaningful cumulative value.
     """
     if not isinstance(session, dict):
         return session
@@ -50,6 +58,13 @@ def augment_session(session):
     frank_slim = session.get('periodBreakdownFrankSlim')
     if trading is not None or frank_slim is not None:
         session['periodGrossResult'] = (trading or 0) + (frank_slim or 0)
+    # The latest session carries the running cumulative total.
+    cumulative = None
+    for entry in session.get('sessions') or []:
+        if isinstance(entry, dict) and entry.get('cumulativeResult') is not None:
+            cumulative = entry['cumulativeResult']
+    if cumulative is not None:
+        session['totalTradingResult'] = cumulative
     return session
 
 @dataclass

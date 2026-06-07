@@ -24,9 +24,16 @@ class TestFrankEnergieBatterySessionResultSensor(unittest.TestCase):
             "periodBreakdownFrankSlim": 0.05807999999999999,
             "periodBreakdownTradingResult": 0.24638372,
             "periodResult": 0.19538371999999998,
+            "sessions": [
+                {"cumulativeResult": 22.07177538677404, "date": "2025-04-17", "result": 0.18},
+                {"cumulativeResult": 22.31815910677404, "date": "2025-04-18", "result": 0.24638372},
+            ],
         })
         # Brutoresultaat is derived: tradingResult + frankSlim
         expected_gross = 0.24638372 + 0.05807999999999999
+        # totalTradingResult is derived from the latest session's running
+        # cumulativeResult so the legacy `trading_result` entity ids keep working.
+        self.assertEqual(session['totalTradingResult'], 22.31815910677404)
         # Test each result sensor
         sensors = [
             (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownEpexCorrection', 'epex'), -0.10908, 'EPEX-correctie vandaag'),
@@ -34,6 +41,7 @@ class TestFrankEnergieBatterySessionResultSensor(unittest.TestCase):
             (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownTradingResult', 'handelsresultaat'), 0.24638372, 'Handelsresultaat vandaag'),
             (FrankEnergieBatterySessionResultSensor(None, session, 'periodGrossResult', 'brutoresultaat'), expected_gross, 'Brutoresultaat vandaag'),
             (FrankEnergieBatterySessionResultSensor(None, session, 'periodResult', 'nettoresultaat'), 0.19538371999999998, 'Totaalresultaat vandaag'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'totalTradingResult', 'trading_result'), 22.31815910677404, 'Handelsresultaat totaal'),
         ]
         for sensor, expected_state, expected_name in sensors:
             self.assertEqual(sensor.state, expected_state)
