@@ -6,5 +6,39 @@
         "password": "Wachtwoord"
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "epex_correction_today": {
+        "name": "EPEX-correctie vandaag"
+      },
+      "frank_slim_today": {
+        "name": "Frank Slim vandaag"
+      },
+      "trading_result_today": {
+        "name": "Handelsresultaat vandaag"
+      },
+      "gross_result_today": {
+        "name": "Brutoresultaat vandaag"
+      },
+      "total_result_today": {
+        "name": "Totaalresultaat vandaag"
+      },
+      "trading_result_total": {
+        "name": "Handelsresultaat totaal"
+      },
+      "battery_mode": {
+        "name": "Batterijmodus"
+      },
+      "state_of_charge": {
+        "name": "State of Charge"
+      },
+      "average_soc": {
+        "name": "Gemiddelde SoC"
+      },
+      "last_update": {
+        "name": "Laatste update"
+      }
+    }
   }
 }

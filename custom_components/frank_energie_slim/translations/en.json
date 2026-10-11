@@ -6,5 +6,39 @@
         "password": "Password"
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "epex_correction_today": {
+        "name": "EPEX correction today"
+      },
+      "frank_slim_today": {
+        "name": "Frank Slim today"
+      },
+      "trading_result_today": {
+        "name": "Trading result today"
+      },
+      "gross_result_today": {
+        "name": "Gross result today"
+      },
+      "total_result_today": {
+        "name": "Total result today"
+      },
+      "trading_result_total": {
+        "name": "Trading result total"
+      },
+      "battery_mode": {
+        "name": "Battery mode"
+      },
+      "state_of_charge": {
+        "name": "State of charge"
+      },
+      "average_soc": {
+        "name": "Average state of charge"
+      },
+      "last_update": {
+        "name": "Last update"
+      }
+    }
   }
 }
