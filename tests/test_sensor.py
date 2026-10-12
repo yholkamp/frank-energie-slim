@@ -36,16 +36,16 @@ class TestFrankEnergieBatterySessionResultSensor(unittest.TestCase):
         self.assertEqual(session['totalTradingResult'], 22.31815910677404)
         # Test each result sensor
         sensors = [
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownEpexCorrection', 'epex'), -0.10908, 'EPEX-correctie vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownFrankSlim', 'frankslim'), 0.05807999999999999, 'Frank Slim vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownTradingResult', 'handelsresultaat'), 0.24638372, 'Handelsresultaat vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodGrossResult', 'brutoresultaat'), expected_gross, 'Brutoresultaat vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'periodResult', 'nettoresultaat'), 0.19538371999999998, 'Totaalresultaat vandaag'),
-            (FrankEnergieBatterySessionResultSensor(None, session, 'totalTradingResult', 'trading_result'), 22.31815910677404, 'Handelsresultaat totaal'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownEpexCorrection', 'epex'), -0.10908, 'epex_correction_today'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownFrankSlim', 'frankslim'), 0.05807999999999999, 'frank_slim_today'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodBreakdownTradingResult', 'handelsresultaat'), 0.24638372, 'trading_result_today'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodGrossResult', 'brutoresultaat'), expected_gross, 'gross_result_today'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'periodResult', 'nettoresultaat'), 0.19538371999999998, 'total_result_today'),
+            (FrankEnergieBatterySessionResultSensor(None, session, 'totalTradingResult', 'trading_result'), 22.31815910677404, 'trading_result_total'),
         ]
-        for sensor, expected_state, expected_name in sensors:
+        for sensor, expected_state, expected_translation_key in sensors:
             self.assertEqual(sensor.state, expected_state)
-            self.assertEqual(sensor._attr_name, expected_name)
+            self.assertEqual(sensor._attr_translation_key, expected_translation_key)
 
 class TestFrankEnergieEntities(unittest.TestCase):
     def setUp(self):
@@ -67,25 +67,25 @@ class TestFrankEnergieEntities(unittest.TestCase):
         sensor = FrankEnergieBatteryModeSensor(None, "id123", "auto", self.details)
         self.assertEqual(sensor.state, "auto")
         self.assertIn("SolarEdge", sensor.device_info["name"])
-        self.assertEqual(sensor._attr_name, "Batterijmodus")
+        self.assertEqual(sensor._attr_translation_key, "battery_mode")
 
     def test_battery_soc_sensor(self):
         sensor = FrankEnergieBatteryStateOfChargeSensor(None, "id123", 77, self.details)
         self.assertEqual(sensor.state, 77)
         self.assertIn("SolarEdge", sensor.device_info["name"])
-        self.assertEqual(sensor._attr_name, "State of Charge")
+        self.assertEqual(sensor._attr_translation_key, "state_of_charge")
         self.assertEqual(sensor._attr_unit_of_measurement, "%")
 
     def test_battery_session_result_sensor(self):
         sensor = FrankEnergieBatterySessionResultSensor(None, self.session, 'periodBreakdownEpexCorrection', 'epex', self.details)
         self.assertEqual(sensor.state, -0.10908)
         self.assertIn("SolarEdge", sensor.device_info["name"])
-        self.assertEqual(sensor._attr_name, "EPEX-correctie vandaag")
+        self.assertEqual(sensor._attr_translation_key, "epex_correction_today")
         self.assertEqual(sensor._attr_unit_of_measurement, "EUR")
 
     def test_total_result_sensor(self):
         sensor = FrankEnergieTotalResultSensor(None, 'periodBreakdownEpexCorrection')
-        self.assertEqual(sensor._attr_name, "EPEX-correctie vandaag")
+        self.assertEqual(sensor._attr_translation_key, "epex_correction_today")
         self.assertEqual(sensor._attr_unit_of_measurement, "EUR")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
         self.assertIsNone(sensor.state)
@@ -94,7 +94,7 @@ class TestFrankEnergieEntities(unittest.TestCase):
         sensor = FrankEnergieTotalAvgSocSensor(None)
         sensor._state = 55.5
         self.assertEqual(sensor.state, 55.5)
-        self.assertEqual(sensor._attr_name, "Gemiddelde SoC")
+        self.assertEqual(sensor._attr_translation_key, "average_soc")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
         self.assertEqual(sensor._attr_unit_of_measurement, "%")
 
@@ -102,7 +102,7 @@ class TestFrankEnergieEntities(unittest.TestCase):
         sensor = FrankEnergieTotalLastModeSensor(None)
         sensor._state = "auto"
         self.assertEqual(sensor.state, "auto")
-        self.assertEqual(sensor._attr_name, "Batterijmodus")
+        self.assertEqual(sensor._attr_translation_key, "battery_mode")
         self.assertEqual(sensor.device_info["name"], "Totaal batterijen")
 
 class TestBatteryModeHelper(unittest.TestCase):

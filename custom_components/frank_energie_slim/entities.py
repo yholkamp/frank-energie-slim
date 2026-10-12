@@ -2,13 +2,15 @@ from homeassistant.helpers.entity import Entity, generate_entity_id
 import voluptuous as vol
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 
-ENTITY_NAMES = {
-    'periodBreakdownEpexCorrection': 'EPEX-correctie vandaag',
-    'periodBreakdownFrankSlim': 'Frank Slim vandaag',
-    'periodBreakdownTradingResult': 'Handelsresultaat vandaag',
-    'periodResult': 'Totaalresultaat vandaag',
-    'periodGrossResult': 'Brutoresultaat vandaag',
-    'totalTradingResult': 'Handelsresultaat totaal',
+# Maps API result keys to translation keys used to look up the localized
+# entity name under entity.sensor.<key>.name in translations/<lang>.json.
+ENTITY_TRANSLATION_KEYS = {
+    'periodBreakdownEpexCorrection': 'epex_correction_today',
+    'periodBreakdownFrankSlim': 'frank_slim_today',
+    'periodBreakdownTradingResult': 'trading_result_today',
+    'periodResult': 'total_result_today',
+    'periodGrossResult': 'gross_result_today',
+    'totalTradingResult': 'trading_result_total',
 }
 
 class FrankEnergieBatterySessionResultSensor(Entity):
@@ -18,7 +20,7 @@ class FrankEnergieBatterySessionResultSensor(Entity):
         self._result_key = result_key
         self._details = details or {}
         device_id = session.get('deviceId')
-        self._attr_name = ENTITY_NAMES.get(result_key, result_key)
+        self._attr_translation_key = ENTITY_TRANSLATION_KEYS.get(result_key, result_key)
         self._attr_unique_id = f"battery_{device_id}_{unique_id_suffix}"
         self._attr_has_entity_name = True
         self._state = session.get(result_key)
@@ -53,7 +55,7 @@ class FrankEnergieTotalAvgSocSensor(Entity):
     """Sensor for average state of charge across all batteries (totals device)."""
     def __init__(self, hass):
         self.hass = hass
-        self._attr_name = "Gemiddelde SoC"
+        self._attr_translation_key = "average_soc"
         self._attr_unique_id = "frank_energie_average_soc"
         self._attr_has_entity_name = True
         self._attr_unit_of_measurement = "%"
@@ -80,7 +82,7 @@ class FrankEnergieTotalLastModeSensor(Entity):
     """Sensor for last battery mode across all batteries (totals device)."""
     def __init__(self, hass):
         self.hass = hass
-        self._attr_name = "Batterijmodus"
+        self._attr_translation_key = "battery_mode"
         self._attr_unique_id = "frank_energie_total_last_mode"
         self._attr_has_entity_name = True
         self._state = None
@@ -106,7 +108,7 @@ class FrankEnergieTotalLastUpdateSensor(Entity):
     """Sensor for the most recent lastUpdate timestamp across all batteries (totals device)."""
     def __init__(self, hass):
         self.hass = hass
-        self._attr_name = "Laatste update"
+        self._attr_translation_key = "last_update"
         self._attr_unique_id = "frank_energie_total_last_update"
         self._attr_has_entity_name = True
         self._attr_device_class = "timestamp"
@@ -138,7 +140,7 @@ class FrankEnergieTotalResultSensor(Entity):
     def __init__(self, hass, result_key, unique_id_suffix=None):
         self.hass = hass
         self._result_key = result_key
-        self._attr_name = f"{ENTITY_NAMES.get(result_key, result_key)}"
+        self._attr_translation_key = ENTITY_TRANSLATION_KEYS.get(result_key, result_key)
         # Use unique_id_suffix for unique_id and entity_id if provided, else fallback to result_key
         suffix = unique_id_suffix if unique_id_suffix is not None else result_key
         self._attr_unique_id = f"frank_energie_{suffix}_total"
@@ -170,7 +172,7 @@ class FrankEnergieBatteryModeSensor(Entity):
         self._device_id = device_id
         self._details = details or {}
         self._state = mode
-        self._attr_name = f"Batterijmodus"
+        self._attr_translation_key = "battery_mode"
         self._attr_unique_id = f"frank_energie_battery_{device_id}_mode"
         self._attr_has_entity_name = True
         if hass is not None:
@@ -203,7 +205,7 @@ class FrankEnergieBatteryStateOfChargeSensor(Entity):
         self._device_id = device_id
         self._details = details or {}
         self._state = state_of_charge
-        self._attr_name = f"State of Charge"
+        self._attr_translation_key = "state_of_charge"
         self._attr_unique_id = f"frank_energie_battery_{device_id}_soc"
         self._attr_has_entity_name = True
         self._attr_unit_of_measurement = "%"
